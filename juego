@@ -1,0 +1,145 @@
+let urls = [
+ "https://rickandmortyapi.com/api/character/avatar/1.jpeg",
+ "https://rickandmortyapi.com/api/character/avatar/2.jpeg",
+ "https://rickandmortyapi.com/api/character/avatar/3.jpeg",
+ "https://rickandmortyapi.com/api/character/avatar/4.jpeg",
+ "https://rickandmortyapi.com/api/character/avatar/5.jpeg",
+ "https://rickandmortyapi.com/api/character/avatar/6.jpeg",
+ "https://rickandmortyapi.com/api/character/avatar/7.jpeg",
+ "https://rickandmortyapi.com/api/character/avatar/8.jpeg",
+];
+const consumoApi = (endPoint) => {
+ try {
+ fetch(endPoint)
+ .then(response => response.json())
+ .then(data => mostrarDatos(data))
+ .error(error)(error => console.log(error))
+ } catch (error) {
+ console.log(error)
+ }
+}
+let avatars = [];
+function mostrarDatos(data) {
+ urls = []
+ let contador = 0;
+ data.items.forEach(item => {
+ if (contador <= 7) {
+ urls.push(item.image)
+ contador++
+ } else {
+ return
+ }
+ });
+ avatars = [...urls, ...urls]; // duplicar
+ mezclar(avatars)
+}
+consumoApi("https://dragonball-api.com/api/characters")
+let contenedor = document.getElementById("contenedor");
+contenedor.classList.add("contenedor")
+let resultados = document.getElementById("resultados");
+let duracion = document.createElement('h1');
+let puntos = document.createElement('h1');
+let cards = [];
+let firstCard = null;
+let secondCard = null;
+let canClick = false;
+let score = 0;
+let startTime = null;
+let timerInterval = null;
+function mezclar(array) {
+ for (let i = array.length - 1; i > 0; i--) {
+ const j = Math.floor(Math.random() * (i + 1));
+ [array[i], array[j]] = [array[j], array[i]];
+ }
+}
+function pintarTablero() {
+ contenedor.innerHTML = ""
+ resultados.appendChild(duracion)
+ resultados.appendChild(puntos)
+ duracion.innerText = " Tiempo: 0s"
+ puntos.innerText = " Puntos: 0"
+ avatars.forEach((url) => {
+ let card = document.createElement('div');
+ card.classList.add('card');
+ card.dataset.url = url;
+ let inner = document.createElement('div');
+ inner.classList.add('inner');
+ let front = document.createElement('img');
+ front.classList.add('front');
+ front.src = url;
+ let back = document.createElement('div');
+ back.classList.add('back');
+ inner.appendChild(front);
+ inner.appendChild(back);
+ card.appendChild(inner);
+ hacerClick(card)
+ cards.push(card);
+ contenedor.appendChild(card);
+ });
+ cards.forEach(card => mostrarCarta(card));
+ setTimeout(() => {
+ cards.forEach(card => ocultarCarta(card));
+ canClick = true;
+ }, 5000);
+}
+function mostrarCarta(card) {
+ card.classList.add('revealed');
+}
+function ocultarCarta(card) {
+ card.classList.remove('revealed');
+}
+function verificarTiempoLimite() {
+ const tiempoPasado = Math.floor((Date.now() - startTime) / 1000);
+ if (tiempoPasado >= 60) {
+ clearInterval(timerInterval);
+ canClick = false;
+ puntos.innerText = ` Tiempo agotado. Puntos: ${score}`;
+ }
+}
+function iniciarTemporizador() {
+ timerInterval = setInterval(() => {
+ const tiempo = Math.floor((Date.now() - startTime) / 1000);
+ duracion.innerText = ` Tiempo: ${tiempo}s`;
+ verificarTiempoLimite();
+ }, 1000);
+}
+function hacerClick(card) {
+ card.addEventListener('click', () => {
+ if (!canClick || card.classList.contains('revealed') || card === firstCard) return;
+ mostrarCarta(card);
+ if (!startTime) {
+ startTime = Date.now();
+ iniciarTemporizador();
+ }
+ if (!firstCard) {
+ firstCard = card;
+ } else {
+ secondCard = card;
+ canClick = false;
+ if (firstCard.dataset.url === secondCard.dataset.url) {
+ score++;
+ puntos.innerText = ` Puntos: ${score}`;
+ firstCard = secondCard = null;
+ canClick = true;
+ if (score === 8) {
+ clearInterval(timerInterval);
+ setTimeout(() => {
+ puntos.innerText = ` ¡Ganaste! Tiempo total: ${Math.floor((Date.now() -
+startTime) / 1000)} segundos`
+ }, 500);
+ }
+ } else {
+ setTimeout(() => {
+ ocultarCarta(firstCard);
+ ocultarCarta(secondCard);
+ firstCard = secondCard = null;
+ canClick = true;
+ }, 1000);
+ }
+ }
+ });
+}
+contenedor.innerText = " cargando datos ...."
+setTimeout(() => {
+ pintarTablero()
+}, 2000);
